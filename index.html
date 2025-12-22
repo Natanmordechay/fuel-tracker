@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>מעקב מספרי דלק</title>
+  </head>
+  <body dir="rtl">
+    <div class="app">
+      <h1>מעקב מספרי דלק</h1>
+      <div class="subtitle">
+        כל מספר דלק שווה <strong>100 ₪</strong>
+      </div>
+
+      <div class="card" id="add-card">
+        <div class="card-header">
+          <div class="label">הוספת מספרי דלק חדשים</div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="label">מספרי דלק (כל שורה = מספר)</div>
+            <textarea
+              id="newCode"
+              rows="3"
+              placeholder="123456&#10;99-88-77"
+            ></textarea>
+            <div id="newCodeError" class="error" style="display: none"></div>
+          </div>
+          <div class="col" style="flex: 0 0 auto; min-width: 170px">
+            <button class="btn-primary" id="addCardBtn">
+              לחץ כאן להוספת המספרים
+            </button>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.85rem; color: #6b7280">
+          אפשר להדביק כמה מספרים אחד מתחת לשני, כל שורה תישמר כמספר נפרד.
+        </div>
+      </div>
+
+      <div class="card" id="stats-card">
+        <div class="card-header">
+          <div class="label">סטטוס כללי</div>
+        </div>
+        <div class="stats">
+          <span class="badge badge-strong">
+            💳 מספרי דלק פעילים: <span id="statsCount">0</span>
+          </span>
+          <span class="badge">
+            💰 סה"כ יתרה: <span id="statsTotalRemaining">0</span> ₪
+          </span>
+          <span class="badge">
+            ⛽ סה"כ שומש: <span id="statsTotalUsed">0</span> ₪
+          </span>
+        </div>
+      </div>
+
+      <div class="card" id="list-card">
+        <div class="card-header">
+          <div class="label">רשימת מספרי הדלק</div>
+          <div class="actions">
+            <button class="btn-outline btn-sm" id="resetAllBtn">
+              איפוס כל המערכת
+            </button>
+            <a href="https://wa.me/972547341227?text=%D7%A8%D7%97%D7%9E%D7%99%D7%9D+%D7%99%D7%A9+%D7%93%D7%9C%D7%A7+?+%E2%9D%A4%EF%B8%8F">
+             <button class="btn-outline-new btn-sm" id="resetAllBtn">
+              מספרים חדשים
+            </button>
+            </a>
+          </div>
+        </div>
+        <div id="cardsContainer"></div>
+      </div>
+    </div>
+    <script src="js/main.js"></script>
+  </body>
+</html>
