@@ -1,14 +1,35 @@
-    // ==== Supabase config (optional) ====
-    const SUPABASE_URL = 'https://alervamlmqciixpzeprc.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsZXJ2YW1sbXFjaWl4cHplcHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMDc1ODUsImV4cCI6MjA4MDU4MzU4NX0.Hg1nZVHFT6SC5mHeBzhHRCVVX_1EOHBztgP-RZPzK00'; 
+// ===== Supabase client (מגיע מ-supabaseClient.js) =====
+    const sb = window.sb;
+
+    (async function requireAuth() {
+  if (!sb) return; // safety
+
+  const { data: { user }, error } = await sb.auth.getUser();
+
+  if (error || !user) {
+    window.location.href = 'login.html';
+  }
+})();
+
+const logoutBtn = document.getElementById('logoutBtn');
+
+(async function initLogout() {
+  if (!logoutBtn || !window.sb) return;
+
+  // אם מחובר – נציג את הכפתור
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) logoutBtn.style.display = 'inline-block';
+
+  logoutBtn.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  });
+})();
+
 
     const TABLE_NAME = 'fuel_cards';
     const PROFILE_ID_KEY = 'fuelProfileId_v1';
     const LOCAL_STORAGE_KEY = 'fuelCardsLocal_v1';
-
-    function hasSupabase() {
-      return SUPABASE_URL && SUPABASE_KEY;
-    }
 
     function generateId() {
       return String(Date.now()) + '_' + Math.random().toString(16).slice(2);
