@@ -128,33 +128,59 @@ async function saveCardsSupabase(cards) {
   if (!userId) return false;
 
   try {
-    // מוחקים את כל השורות של המשתמש הנוכחי
-    const { error: delError } = await sb
-      .from(TABLE_NAME)
-      .delete()
-      .eq('user_id', userId);
-
-    if (delError) {
-      console.warn('Supabase delete error:', delError.message);
-      return false;
+    // אם אין כלום — מוחקים הכל למשתמש
+    if (!cards.length) {
+      const { error } = await sb.from(TABLE_NAME).delete().eq('user_id', userId);
+      if (error) {
+        console.warn('Supabase delete-all error:', error.message);
+        return false;
+      }
+      return true;
     }
 
-    if (!cards.length) return true;
-
-    // מכניסים מחדש עם user_id
+    // 1) Upsert (עדכון/הכנסה) לכל הרשומות
     const payload = cards.map(c => ({
       user_id: userId,
       code: c.code,
       remaining: c.remaining
     }));
 
-    const { error: insError } = await sb
+    const { error: upsertError } = await sb
       .from(TABLE_NAME)
-      .insert(payload);
+      .upsert(payload, { onConflict: 'user_id,code' });
 
-    if (insError) {
-      console.warn('Supabase insert error:', insError.message);
+    if (upsertError) {
+      console.warn('Supabase upsert error:', upsertError.message);
       return false;
+    }
+
+    // 2) מחיקה בטוחה של מה שנמחק אצלך בלוקאל (diff)
+    const { data: existing, error: selError } = await sb
+      .from(TABLE_NAME)
+      .select('code')
+      .eq('user_id', userId);
+
+    if (selError) {
+      console.warn('Supabase select-for-diff error:', selError.message);
+      return true; // לא מפילים שמירה בגלל diff
+    }
+
+    const currentCodes = new Set(cards.map(c => c.code));
+    const toDelete = (existing || [])
+      .map(r => r.code)
+      .filter(code => code && !currentCodes.has(code));
+
+    if (toDelete.length) {
+      const { error: delError } = await sb
+        .from(TABLE_NAME)
+        .delete()
+        .eq('user_id', userId)
+        .in('code', toDelete);
+
+      if (delError) {
+        console.warn('Supabase diff-delete error:', delError.message);
+        // עדיין נחזיר true כי הנתונים שלך נשמרו/עודכנו; רק ניקיון לא הצליח
+      }
     }
 
     return true;
@@ -164,15 +190,19 @@ async function saveCardsSupabase(cards) {
   }
 }
 
+
 // ===== Unified load/save =====
 async function loadCards() {
   const fromSupabase = await loadCardsSupabase();
-  if (fromSupabase && Array.isArray(fromSupabase)) {
+
+  // סומכים על Supabase רק אם הוא החזיר Array (גם אם ריק) *וגם* זה הגיע בלי שגיאה
+  if (Array.isArray(fromSupabase)) {
     saveCardsLocal(fromSupabase);
     return fromSupabase;
   }
   return loadCardsLocal();
 }
+
 
 async function saveCards(cards) {
   saveCardsLocal(cards);
