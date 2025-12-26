@@ -3,15 +3,256 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Auth Test</title>
-</head>
-<body>
-  <button id="login">התחבר עם Google</button>
-  <button id="logout" style="display:none;">התנתק</button>
-  <pre id="out"></pre>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="js/supabaseClient.js"></script>
-<script src="js/login.js"></script>
+  <title>התחברות | Fuel Tracker</title>
 
+  <style>
+    :root{
+      --bg: #0b0f1a;
+      --panel: #0b0f1a;
+      --text: #e7eaf0;
+      --muted: rgba(231,234,240,.7);
+      --line: rgba(255,255,255,.10);
+      --btnBg: #ffffff;
+      --btnText: #111827;
+      --shadow: 0 24px 70px rgba(0,0,0,.45);
+      --radius: 22px;
+      --accent: #3b82f6;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(59,130,246,.14), transparent 60%),
+                  radial-gradient(900px 600px at 90% 30%, rgba(99,102,241,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans Hebrew", sans-serif;
+    }
+
+    /* Layout */
+    .auth{
+      min-height:100vh;
+      display:grid;
+      grid-template-columns: 1fr 1fr; /* דסקטופ: תמונה גדולה יותר */
+    }
+
+    /* Left hero (desktop only) */
+    .hero{
+      position:relative;
+      overflow:hidden;
+      display:block;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,.25), rgba(0,0,0,.50)),
+        url("assets/login-hero.png") center / cover no-repeat;
+    }
+    .hero::after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(900px 400px at 25% 25%, rgba(59,130,246,.22), transparent 55%),
+        radial-gradient(700px 380px at 80% 40%, rgba(99,102,241,.16), transparent 55%);
+      pointer-events:none;
+    }
+
+    .hero-content{
+      position:absolute;
+      inset:0;
+      padding:40px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      gap:14px;
+    }
+
+    .hero-title{
+      font-size:44px;
+      line-height:1.05;
+      font-weight:900;
+      letter-spacing:-0.8px;
+      max-width:520px;
+      margin-top:36px;
+    }
+
+    .hero-sub{
+      font-size:16px;
+      color:rgba(231,234,240,.75);
+      max-width:520px;
+      line-height:1.6;
+    }
+
+    /* Right panel */
+    .panel{
+      position:relative;
+      background: var(--panel);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:40px 24px;
+    }
+
+    .close{
+      position:absolute;
+      top:22px;
+      left:22px; /* RTL: משמאל זה "X" כמו בדוגמא */
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: rgba(231,234,240,.85);
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+      transition: .15s ease;
+    }
+    .close:hover{ background: rgba(255,255,255,.07); }
+
+    .box{
+      width:min(420px, 100%);
+      text-align:center;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin-bottom:26px;
+      opacity:.95;
+    }
+    .brand-mark{
+      width:34px;height:34px;
+      border-radius:12px;
+      background: linear-gradient(135deg, rgba(59,130,246,.95), rgba(99,102,241,.75));
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow: 0 16px 40px rgba(59,130,246,.18);
+    }
+    .brand-name{
+      font-weight:800;
+      letter-spacing:.2px;
+      color:rgba(231,234,240,.92);
+    }
+
+    h1{
+      margin:0 0 14px;
+      font-size:28px;
+      font-weight:900;
+      letter-spacing:-0.3px;
+    }
+
+    .btn-google{
+      width:100%;
+      border:0;
+      background: var(--btnBg);
+      color: var(--btnText);
+      border-radius: 10px;
+      padding:14px 14px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+      transition: transform .05s ease, filter .2s ease;
+    }
+    .btn-google:hover{ filter: brightness(1.02); }
+    .btn-google:active{ transform: translateY(1px); }
+
+    .g-icon{
+      width:18px;height:18px;
+      display:inline-block;
+    }
+
+    .hint{
+      margin-top:16px;
+      font-size:12.5px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .status{
+      margin-top:14px;
+      display:none;
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      font-size:13px;
+      color: rgba(231,234,240,.9);
+      text-align:center;
+    }
+    .status.show{ display:block; }
+    .status.error{
+      border-color: rgba(239,68,68,.30);
+      background: rgba(239,68,68,.10);
+      color: rgba(254,226,226,.95);
+    }
+
+    .loading .btn-text{ opacity:.85; }
+    .spinner{
+      width:18px;height:18px;
+      border-radius:50%;
+      border:2px solid rgba(17,24,39,.22);
+      border-top-color: rgba(17,24,39,.82);
+      animation: spin .8s linear infinite;
+      display:none;
+    }
+    .loading .spinner{ display:inline-block; }
+    @keyframes spin { to{ transform: rotate(360deg);} }
+
+    /* Mobile: hide hero, make panel full width */
+    @media (max-width: 920px){
+      .auth{ grid-template-columns: 1fr; }
+      .hero{ display:none; }
+      .panel{ padding:28px 18px; }
+      h1{ font-size:26px; }
+      .close{ display:none; } /* במובייל לא חייב X */
+    }
+  </style>
+</head>
+
+<body>
+  <main class="auth">
+    <!-- Desktop image side -->
+    <section class="hero" aria-hidden="true"></section>
+
+    <!-- Right sign-in panel -->
+    <section class="panel">
+      <div class="box">
+        <div class="brand">
+          <div class="brand-name">Fuel Tracker</div>
+        </div>
+
+        <h1>התחבר לחשבונך</h1>
+
+        <button id="login" class="btn-google" type="button">
+          <span class="spinner" aria-hidden="true"></span>
+
+          <!-- Google icon (SVG) -->
+          <svg class="g-icon" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.651 32.655 29.215 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.957 3.043l5.657-5.657C34.622 6.053 29.563 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.01 12 24 12c3.059 0 5.842 1.154 7.957 3.043l5.657-5.657C34.622 6.053 29.563 4 24 4 16.318 4 9.656 8.338 6.306 14.691z"/>
+            <path fill="#4CAF50" d="M24 44c5.106 0 9.86-1.949 13.409-5.121l-6.191-5.238C29.17 35.091 26.715 36 24 36c-5.196 0-9.62-3.317-11.283-7.946l-6.522 5.023C9.505 39.556 16.227 44 24 44z"/>
+            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.794 2.214-2.352 4.086-4.389 5.238l.003-.002 6.191 5.238C36.67 39.347 44 34 44 24c0-1.341-.138-2.651-.389-3.917z"/>
+          </svg>
+
+          <span class="btn-text">המשך עם Google</span>
+        </button>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+
+        <div class="hint">
+          ההתחברות נדרשת כדי לשמור את הנתונים בענן ולהציג אותם מכל מכשיר.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/login.js"></script>
 </body>
 </html>
